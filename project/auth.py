@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request
+from flask import Blueprint, render_template, redirect, url_for, request, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from .models import User
 from . import db
@@ -25,6 +25,7 @@ def signup_post():
 
     # if user already exists redirect back to signup page to retry
     if user:
+        flash('User already exists!')
         return redirect(url_for('auth.signup'))
 
     # Create a new user with the data from the form and hash the pass for security
