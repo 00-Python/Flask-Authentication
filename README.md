@@ -8,7 +8,7 @@ This project demonstrates how to add authentication to a Flask app with Flask-Lo
 The file structure of the project looks like this:
 
 ```
-flask_auth_app
+Flask-Authentication
 └── project
     ├── __init__.py       # setup the app
     ├── auth.py           # the auth routes for the app
@@ -28,8 +28,8 @@ flask_auth_app
 1. Clone the repository and navigate to the project directory:
 
 ```bash
-git clone https://github.com/username/flask_auth_app.git
-cd flask_auth_app
+git clone https://github.com/00-Python/Flask-Authentication.git
+cd Flask-Authentication
 ```
 
 2. Create a virtual environment and activate it:
