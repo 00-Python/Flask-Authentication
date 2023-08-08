@@ -1,4 +1,6 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, redirect, url_for, request
+from werkzeug.security import generate_password_hash, check_password_hash
+from .models import User
 from . import db
 
 auth = Blueprint('auth', __name__)
@@ -10,6 +12,28 @@ def login():
 @auth.route('/signup')
 def signup():
     return render_template('signup.html')
+
+@auth.route('/signup', methods=['POST'])
+def signup_post():
+    # code to validate and add user to db goes here
+    email = request.form.get('email')
+    name = request.form.get('name')
+    password = request.form.get('password')
+
+    # check if email already exists in db
+    user = User.query.filter_by(email=email).first()
+
+    # if user already exists redirect back to signup page to retry
+    if user:
+        return redirect(url_for('auth.signup'))
+
+    # Create a new user with the data from the form and hash the pass for security
+    new_user = User(email=email, name=name, password=generate_password_hash(password, method='sha256')) 
+
+    # Add New User to db
+    db.session.add(new_user)
+    db.session.commit()
+    return redirect(url_for('auth.login'))
 
 @auth.route('/logout')
 def logout():
