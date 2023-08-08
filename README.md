@@ -43,6 +43,8 @@ source auth/bin/activate
 
 ```bash
 pip install flask flask-sqlalchemy flask-login
+or
+pip install -r requirements.txt
 ```
 
 ## Usage
