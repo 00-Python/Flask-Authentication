@@ -28,7 +28,7 @@ flask_auth_app
 1. Clone the repository and navigate to the project directory:
 
 ```bash
-git clone https://github.com/username/flask_auth_app.git
+git clone https://github.com/00-Python/Flask-Authentication.git
 cd flask_auth_app
 ```
 
