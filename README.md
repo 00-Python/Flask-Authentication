@@ -1,4 +1,5 @@
 # Flask-Login Authentication App
+credit: `https://www.digitalocean.com/community/tutorials/how-to-add-authentication-to-your-app-with-flask-login`
 
 This project demonstrates how to add authentication to a Flask app with Flask-Login. It allows users to log in and access protected pages, and displays information from the user's account on their profile page.
 
