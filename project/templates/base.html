@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Flask Auth Example</title>
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
 </head>
 
 <body>
@@ -22,6 +22,9 @@
                             </a>
                             <!-- make only visible to authenticated users -->
                             {% if current_user.is_authenticated %}
+                            {% if 'admin' in current_user.roles[0].name %}
+                            <a href="{{ url_for('auth.create_user') }}" class="navbar-item">Create User</a>
+                            {% endif %}
                             <a href="{{ url_for('main.profile') }}" class="navbar-item">
                                 Profile
                             </a>
@@ -36,7 +39,7 @@
                                 Sign Up
                             </a>
                             {% endif %}
-							<!-- make only visible to authenticated users -->
+                            <!-- make only visible to authenticated users -->
                             {% if current_user.is_authenticated %}
                             <a href="{{ url_for('auth.logout') }}" class="navbar-item">
                                 Logout
@@ -50,11 +53,13 @@
 
         <div class="hero-body">
             <div class="container has-text-centered">
-               {% block content %}
-               {% endblock %}
+                {{current_user.role}}
+                {% block content %}
+                {% endblock %}
             </div>
         </div>
     </section>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </body>
 
 </html>

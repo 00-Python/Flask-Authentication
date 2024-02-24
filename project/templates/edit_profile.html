@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="column is-4 is-offset-4">
+    <h1 class="title">
+        Edit profile
+    </h1>
+    <form id="updateProfileForm" action="" method="post">
+        {{ form.hidden_tag() }}
+        {{ form.csrf_token }}
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="notification is-danger">
+            {% for message in messages %}
+            {{ message }}<br>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+        <div class="field">
+            <label class="label">Email</label>
+            <div class="control">
+                {{ form.email(class='input', placeholder='Email') }}
+            </div>
+        </div>
+        <div class="field">
+            <label class="label">Name</label>
+            <div class="control">
+                {{ form.name(class='input', placeholder='Name') }}
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="control">
+                <button class="button is-info" type="submit">Update</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#updateProfileForm').submit(function (e) {
+            e.preventDefault();
+
+            var formData = $(this).serialize();
+
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: formData,
+                success: function (response) {
+                    // Handle success response
+                    alert('Profile updated successfully!');
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    // Handle error response
+                    alert('An error occurred while updating the profile.');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

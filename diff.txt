@@ -1,0 +1,627 @@
+diff --git a/README.md b/README.md
+index 94b8d6c..dd2b593 100644
+--- a/README.md
++++ b/README.md
+@@ -1,66 +1,107 @@
+-# Flask-Login Authentication App
+-credit: `https://www.digitalocean.com/community/tutorials/how-to-add-authentication-to-your-app-with-flask-login`
+-
+-This project demonstrates how to add authentication to a Flask app with Flask-Login. It allows users to log in and access protected pages, and displays information from the user's account on their profile page.
+-
+-## Project Structure
+-
+-The file structure of the project looks like this:
+-
+-```
+-Flask-Authentication
+-└── project
+-    ├── __init__.py       # setup the app
+-    ├── auth.py           # the auth routes for the app
+-    ├── db.sqlite         # the database
+-    ├── main.py           # the non-auth routes for the app
+-    ├── models.py         # the user model
+-    └── templates
+-        ├── base.html     # contains common layout and links
+-        ├── index.html    # show the home page
+-        ├── login.html    # show the login form
+-        ├── profile.html  # show the profile page
+-        └── signup.html   # show the signup form
+-```
++# Flask-Authentication-System
++The Flask Authentication System provides a solid foundation for implementing user authentication and authorization in a Flask application. It follows best practices and includes essential features such as user registration, login, password hashing, and role-based access control. With the suggested improvements and future features, this system can be extended to meet the specific requirements of various applications.
++
++
++## The file structure of the project looks like this:
++
++    Flask-Authentication-System
++    |──instance
++    |    ├── db.sqlite         # the database
++       
++
++    └── project
++        ├── __init__.py       # setup the app
++        ├── auth.py           # the auth routes for the app
++        ├── main.py           # the non-auth routes for the app
++        ├── forms.py          # the WebForms
++        ├── models.py         # the database models
++        └── templates
++            ├── base.html     # contains common layout and links
++            ├── base.html     # show the admin create user page with role assignment
++            ├── index.html    # show the home page
++            ├── login.html    # show the login form
++            ├── profile.html  # show the profile page
++            └── signup.html   # show the user signup form (user role only)
+ 
+ ## Installation
+ 
+-1. Clone the repository and navigate to the project directory:
++### Clone the repository and navigate to the project directory:
+ 
+-```bash
+-git clone https://github.com/00-Python/Flask-Authentication.git
+-cd Flask-Authentication
+-```
++    git clone https://github.com/JWebster-Colby/Flask-Authentication-System.git
++    cd Flask-Authentication-System
+ 
+-2. Create a virtual environment and activate it:
++### Create a virtual environment and activate it:
+ 
+-```bash
+-python3 -m venv auth
+-source auth/bin/activate
+-```
++    python3 -m venv auth
++    source auth/bin/activate
+ 
+-3. Install the required packages:
++### Install the required packages:
+ 
+-```bash
+-pip install flask flask-sqlalchemy flask-login
+-or
+-pip install -r requirements.txt
+-```
++    pip install flask flask-sqlalchemy flask-login
++    or
++    pip install -r requirements.txt
++
++## Configuration
++
++1. Open the `config.py` file and set the `SECRET_KEY` variable to a secure random string.
++
++2. Open the `project/__init__.py` file and update the `SQLALCHEMY_DATABASE_URI` variable if you want to use a different database.
+ 
+ ## Usage
+ 
+-1. Set the FLASK_APP and FLASK_DEBUG environment variables:
++Set the FLASK_APP and FLASK_DEBUG environment variables:
++
++    export FLASK_APP=project
++    export FLASK_DEBUG=1
++
++Run the Flask application:
++
++    flask run
++
++Open your browser and navigate to [http://localhost:5000/](http://localhost:5000/) to access the application.
++
++## Features
++The current features of the Flask Authentication System include:
++
++1. User registration
++2. User login
++3. Password hashing with bcrypt
++4. User roles (admin and user)
++5. Profile page displaying user's name and role
++6. Creation of new users (admin-only)
++7. CSRF protection with Flask-WTF
++8. Integration with SQLite database
++9. Proper project structure following best practices
++10. User authentication with Flask-Login
++11. Secure route protection with `@login_required`
++
++## Next Steps
++
++Here are some possible improvements or additional features you can consider for this authentication system:
++
++- Implement additional password complexity requirements.
++
++- Add email confirmation functionality to verify user email addresses before allowing them to register.
++
++
++- Add a password reset option, allowing users to reset their password if they have forgotten it.
++
++- Implement two-factor authentication (2FA) for an additional layer of security.
++
++- Write unit tests and integration tests to ensure the system functions correctly.
++
++- Implement logging to capture crucial user steps and system events for debugging and monitoring purposes.
++
++- Optimize database queries using techniques like SQLAlchemy's query optimization and database indexing.
++
++- Implement HTTPS and secure HTTP headers to protect data transmission and prevent security vulnerabilities.
+ 
+-```bash
+-export FLASK_APP=project
+-export FLASK_DEBUG=1
+-```
++- Use more user-friendly URLs to improve the usability and user experience of the application.
+ 
+-2. Run the Flask application:
++- Use a separate file for database configurations to keep the codebase organized.
+ 
+-```bash
+-flask run
+-```
++- Replace passing the `name` parameter to the `profile` page with `current_user.name`.
+ 
+-3. Open a web browser and navigate to `localhost:5000` to access the app.
++## Contributors
+ 
++This project was created by [JWebster-Colby](https://github.com/JWebster-Colby).
+\ No newline at end of file
+diff --git a/project/__init__.py b/project/__init__.py
+index b83bb60..6010e74 100644
+--- a/project/__init__.py
++++ b/project/__init__.py
+@@ -1,8 +1,9 @@
+ from flask import Flask
+ from flask_sqlalchemy import SQLAlchemy
+ from flask_login import LoginManager
++from flask_wtf.csrf import CSRFProtect
+ 
+-# init SQLAlchemy so we can use it later in our models
++#init SQLAlchemy so we can use it later in our model
+ db = SQLAlchemy()
+ 
+ def create_app():
+@@ -10,29 +11,40 @@ def create_app():
+ 
+     app.config['SECRET_KEY'] = 'secret-key-goes-here'
+     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
+-
++    
++    csrf = CSRFProtect(app)
++    
+     db.init_app(app)
+ 
+     login_manager = LoginManager()
+     login_manager.login_view = 'auth.login'
+     login_manager.init_app(app)
+-    
+-    from .models import User
+-
+-    @login_manager.user_loader
+-    def load_user(user_id):
+-        # since the user_id is just the primary key of our user table, use it in the query for the user
+-        return User.query.get(int(user_id))
+ 
+-    # blueprint for auth routes in our app
+-    from .auth import auth as auth_blueprint
+-    app.register_blueprint(auth_blueprint)
++    with app.app_context():
++        from .models import User, UserRole
++        from .auth import auth as auth_blueprint
++        from .main import main as main_blueprint
+ 
+-    # blueprint for non-auth parts of app
+-    from .main import main as main_blueprint
+-    app.register_blueprint(main_blueprint)
++        app.register_blueprint(auth_blueprint)
++        app.register_blueprint(main_blueprint)
+ 
+-    with app.app_context():
+         db.create_all()
+ 
+-    return app
++        @login_manager.user_loader
++        def load_user(user_id):
++            # since the user_id is just the primary key of our user table, use it in the query for the user
++            return User.query.get(int(user_id))
++
++        # create admin role if not exists
++        if UserRole.query.filter_by(name='admin').first() is None:
++            admin_role = UserRole(name='admin')
++            db.session.add(admin_role)
++
++        # create user role if not exists
++        if UserRole.query.filter_by(name='user').first() is None:
++            user_role = UserRole(name='user')
++            db.session.add(user_role)
++
++        db.session.commit()
++
++    return app
+\ No newline at end of file
+diff --git a/project/auth.py b/project/auth.py
+index 4955d8f..fb95dc5 100644
+--- a/project/auth.py
++++ b/project/auth.py
+@@ -1,62 +1,127 @@
+ from flask import Blueprint, render_template, redirect, url_for, request, flash
+ from werkzeug.security import generate_password_hash, check_password_hash
+-from flask_login import login_user, login_required, logout_user
+-from .models import User
++from flask_login import login_user, login_required, logout_user, current_user
++from .models import User, UserRole
+ from . import db
++from .forms import LoginForm, RegisterForm, CreateUserForm, ProfileEditForm
++import bcrypt
+ 
+ auth = Blueprint('auth', __name__)
+ 
+ @auth.route('/login')
+ def login():
+-    return render_template('login.html')
++    form = LoginForm()
++    return render_template('login.html', form=form)
+ 
+ @auth.route('/login', methods=['POST'])
+ def login_post():
+-    # Login Code Goes Here
+-    email = request.form.get('email')
+-    password = request.form.get('password')
+-    remember = True if request.form.get('remember') else False
++    form = LoginForm()
++    if form.validate_on_submit():
++        # Login Code Goes Here
++        email = request.form.get('email')
++        password = request.form.get('password')
++        remember = True if request.form.get('remember') else False
+ 
+-    user = User.query.filter_by(email=email).first()
++        user = User.query.filter_by(email=email).first()
+ 
+-    # Chech if user exists, hash provided pass and compare
+-    if not user or not check_password_hash(user.password, password):
+-        flash('Please check logindetails and try again!')
+-        return redirect(url_for('auth.login'))
++        # Check if user exists and compare hashed password
++        if not user or not bcrypt.checkpw(password.encode('utf-8'), user.password):
++            flash('Please check login details and try again!')
++            return redirect(url_for('auth.login'))
+ 
+-    # if all checks pass redirect to profile page
+-    login_user(user, remember=remember)
+-    return redirect(url_for('main.profile'))
++        # if all checks pass, log in the user
++        login_user(user, remember=remember)
++        return redirect(url_for('main.profile'))
+ 
+ @auth.route('/signup')
+ def signup():
+-    return render_template('signup.html')
++    form = RegisterForm()
++    return render_template('signup.html', form=form)
+ 
+ @auth.route('/signup', methods=['POST'])
+ def signup_post():
+-    # code to validate and add user to db goes here
+-    email = request.form.get('email')
+-    name = request.form.get('name')
+-    password = request.form.get('password')
++    form = RegisterForm()
++    if form.validate_on_submit():
++        # code to validate and add user to db goes here
++        email = request.form.get('email')
++        name = request.form.get('name')
++        password = request.form.get('password')
++        
++        # check if email already exists in db
++        user = User.query.filter_by(email=email).first()
++        
++        # if user already exists redirect back to signup page to retry
++        if user:
++            flash('User already exists!')
++            return redirect(url_for('auth.signup'))
++
++        # Hash the password with bcrypt
++        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
++
++        # Fetch the role 'user' from the database
++        role = UserRole.query.filter_by(name='user').first()
++
++        # Create a new user with the data from the form, hashed password, and 'user' role
++        new_user = User(email=email, name=name, password=hashed_password, roles=[role])
++
++        # Add New User to db
++        db.session.add(new_user)
++        db.session.commit()
++        return redirect(url_for('auth.login'))
+ 
+-    # check if email already exists in db
+-    user = User.query.filter_by(email=email).first()
++@auth.route('/create-user', methods=['GET', 'POST'])
++# @login_required
++def create_user():
++    form = CreateUserForm()
++    if form.validate_on_submit():
++        role_ids = form.roles.data
++        roles = UserRole.query.filter(UserRole.id.in_(role_ids)).all()
+ 
+-    # if user already exists redirect back to signup page to retry
+-    if user:
+-        flash('User already exists!')
+-        return redirect(url_for('auth.signup'))
++        email = form.email.data
++        name = form.name.data
++        password = form.password.data
+ 
+-    # Create a new user with the data from the form and hash the pass for security
+-    new_user = User(email=email, name=name, password=generate_password_hash(password, method='sha256')) 
++        # check if a user exists
++        user = User.query.filter_by(email=email).first()
++        if user:
++            flash('Email already exists')
++            return redirect(url_for('auth.create_user'))
+ 
+-    # Add New User to db
+-    db.session.add(new_user)
+-    db.session.commit()
+-    return redirect(url_for('auth.login'))
++        # hash the password
++        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
++
++        # create a new user
++        new_user = User(email=email, name=name, password=hashed_password, roles=roles)
++
++        db.session.add(new_user)
++        db.session.commit()
++        flash('User created successfully')
++        return redirect(url_for('auth.create_user'))
++    return render_template('create_user.html', form=form)
++
++@auth.route('/edit_profile', methods=['GET', 'POST'])
++@login_required
++def edit_profile():
++    form = ProfileEditForm()
++    
++    if form.validate_on_submit():
++        current_user.name = form.name.data
++        current_user.email = form.email.data
++        
++        db.session.commit()
++        flash('Your profile has been updated.')
++        return redirect(url_for('main.profile'))
++    
++    elif request.method == 'GET':
++        form.name.data = current_user.name
++        form.email.data = current_user.email
++    
++    return render_template('edit_profile.html', form=form, current_user=current_user)
+ 
+ @auth.route('/logout')
+ @login_required
+ def logout():
+     logout_user()
+     return redirect(url_for('main.index'))
++
++
+diff --git a/project/models.py b/project/models.py
+index a8ef3f9..819ddc8 100644
+--- a/project/models.py
++++ b/project/models.py
+@@ -1,8 +1,21 @@
+ from flask_login import UserMixin
+ from . import db
+ 
++# Define the association table for the many-to-many relationship between Users and Roles
++# This needs to be done before the User and Role models that reference it
++user_roles = db.Table('user_roles',
++    db.Column('user_id', db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')),
++    db.Column('role_id', db.Integer, db.ForeignKey('user_role.id', ondelete='CASCADE'))
++)
++
+ class User(UserMixin, db.Model):
+-    id = db.Column(db.Integer, primary_key=True) # primary keys are required by SQLAlchemy
++    id = db.Column(db.Integer, primary_key=True)
++    username = db.Column(db.String(100), unique=True)
+     email = db.Column(db.String(100), unique=True)
+     password = db.Column(db.String(100))
+-    name = db.Column(db.String(1000))
++    name = db.Column(db.String(50))
++    roles = db.relationship('UserRole', secondary=user_roles, backref=db.backref('users', lazy='dynamic'))
++
++class UserRole(db.Model):
++    id = db.Column(db.Integer, primary_key=True, name='id')
++    name = db.Column(db.String(50), unique=True)
+\ No newline at end of file
+diff --git a/project/templates/base.html b/project/templates/base.html
+index b2d8e57..88e3f29 100644
+--- a/project/templates/base.html
++++ b/project/templates/base.html
+@@ -6,7 +6,7 @@
+     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+     <meta name="viewport" content="width=device-width, initial-scale=1">
+     <title>Flask Auth Example</title>
+-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
++    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+ </head>
+ 
+ <body>
+@@ -22,6 +22,9 @@
+                             </a>
+                             <!-- make only visible to authenticated users -->
+                             {% if current_user.is_authenticated %}
++                            {% if 'admin' in current_user.roles[0].name %}
++                            <a href="{{ url_for('auth.create_user') }}" class="navbar-item">Create User</a>
++                            {% endif %}
+                             <a href="{{ url_for('main.profile') }}" class="navbar-item">
+                                 Profile
+                             </a>
+@@ -36,7 +39,7 @@
+                                 Sign Up
+                             </a>
+                             {% endif %}
+-							<!-- make only visible to authenticated users -->
++                            <!-- make only visible to authenticated users -->
+                             {% if current_user.is_authenticated %}
+                             <a href="{{ url_for('auth.logout') }}" class="navbar-item">
+                                 Logout
+@@ -50,11 +53,13 @@
+ 
+         <div class="hero-body">
+             <div class="container has-text-centered">
+-               {% block content %}
+-               {% endblock %}
++                {{current_user.role}}
++                {% block content %}
++                {% endblock %}
+             </div>
+         </div>
+     </section>
++    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+ </body>
+ 
+-</html>
++</html>
+\ No newline at end of file
+diff --git a/project/templates/login.html b/project/templates/login.html
+index 085735c..db69226 100644
+--- a/project/templates/login.html
++++ b/project/templates/login.html
+@@ -4,35 +4,25 @@
+ <div class="column is-4 is-offset-4">
+     <h3 class="title">Login</h3>
+     <div class="box">
+-    <!-- Display error message  -->
+-    {% with messages = get_flashed_messages() %}
+-	{% if messages %}
+-	<div class="notification is-danger">
+-		{{ messages[0] }}
+-	</div>
+-	{% endif %}
+-    {% endwith %}
+-    
+-        <form method="POST" action="/login">
+-            <div class="field">
+-                <div class="control">
+-                    <input class="input is-large" type="email" name="email" placeholder="Your Email" autofocus="">
+-                </div>
+-            </div>
++        {% with messages = get_flashed_messages() %}
++        {% if messages %}
++        <div class="notification is-danger">
++            {% for message in messages %}
++            {{ message }}<br>
++            {% endfor %}
++        </div>
++        {% endif %}
++        {% endwith %}
++
++        <form method="POST">
++            {{ form.hidden_tag() }}
++            {{ form.csrf_token }}
++            {{ form.email(class='input is-large', placeholder='Your Email') }}
++            {{ form.password(class='input is-large', placeholder='Your Password') }}
++            {{ form.remember() }} Remember me
+ 
+-            <div class="field">
+-                <div class="control">
+-                    <input class="input is-large" type="password" name="password" placeholder="Your Password">
+-                </div>
+-            </div>
+-            <div class="field">
+-                <label class="checkbox">
+-                    <input type="checkbox" name="remember">
+-                    Remember me
+-                </label>
+-            </div>
+             <button class="button is-block is-info is-large is-fullwidth">Login</button>
+         </form>
+     </div>
+ </div>
+-{% endblock %}
++{% endblock %}
+\ No newline at end of file
+diff --git a/project/templates/profile.html b/project/templates/profile.html
+index 81f4591..9c050dc 100644
+--- a/project/templates/profile.html
++++ b/project/templates/profile.html
+@@ -1,7 +1,24 @@
+ {% extends "base.html" %}
+ 
+ {% block content %}
+-<h1 class="title">
+-  Welcome, {{ name }}!
+-</h1>
++<div class="column is-4 is-offset-4">
++{% with messages = get_flashed_messages() %}
++{% if messages %}
++    <div class="notification is-danger">
++        {% for message in messages %}
++        {{ message }} <br>
++        {% endfor %}
++    </div>
++{% endif %}
++{% endwith %}
++    <h1 class="title">
++        Welcome, {{ name }}!
++    </h1>
++    <h2 class="subtitle">
++        Roles: {{ current_user.roles|map(attribute='name')|join(', ') }}
++    </h2>
++    <a href="{{ url_for('auth.edit_profile') }}">
++        <button type="button">Edit Profile</button>
++    </a>
++</div>
+ {% endblock %}
+diff --git a/project/templates/signup.html b/project/templates/signup.html
+index d9eec32..df15c7e 100644
+--- a/project/templates/signup.html
++++ b/project/templates/signup.html
+@@ -4,36 +4,25 @@
+ <div class="column is-4 is-offset-4">
+     <h3 class="title">Sign Up</h3>
+     <div class="box">
+-		<!--Display Eroor Message -->
+-		{% with messages = get_flashed_messages() %}
+-		{% if messages %}
+-			<div class="notification is-danger">
+-				{{ messages[0] }} Go to <a href="{{ url_for('auth.login') }}">login page</a>.
+-			</div>
+-		{% endif %}
+-		{% endwith %}
+-		
+-        <form method="POST" action="/signup">
+-            <div class="field">
+-                <div class="control">
+-                    <input class="input is-large" type="email" name="email" placeholder="Email" autofocus="">
+-                </div>
+-            </div>
++        {% with messages = get_flashed_messages() %}
++        {% if messages %}
++        <div class="notification is-danger">
++            {% for message in messages %}
++            {{ message }}<br>
++            {% endfor %}
++        </div>
++        {% endif %}
++        {% endwith %}
+ 
+-            <div class="field">
+-                <div class="control">
+-                    <input class="input is-large" type="text" name="name" placeholder="Name" autofocus="">
+-                </div>
+-            </div>
+-
+-            <div class="field">
+-                <div class="control">
+-                    <input class="input is-large" type="password" name="password" placeholder="Password">
+-                </div>
+-            </div>
++        <form method="POST">
++            {{ form.hidden_tag() }}
++            {{ form.csrf_token }}
++            {{ form.email(class='input is-large', placeholder='Email') }}
++            {{ form.name(class='input is-large', placeholder='Name') }}
++            {{ form.password(class='input is-large', placeholder='Password') }}
+ 
+             <button class="button is-block is-info is-large is-fullwidth">Sign Up</button>
+         </form>
+     </div>
+ </div>
+-{% endblock %}
++{% endblock %}
+\ No newline at end of file

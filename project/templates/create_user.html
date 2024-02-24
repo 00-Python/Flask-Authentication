@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="column is-4 is-offset-4">
+    <h3 class="title">Create User</h3>
+    <div class="box">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="notification is-danger">
+                    {% for message in messages %}
+                    {{ message }} <br>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            {{ form.csrf_token }}
+            <div class="field">
+                <label class="label">Email</label>
+                <div class="control">
+                    {{ form.email(class='input', placeholder='Email') }}
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">Name</label>
+                <div class="control">
+                    {{ form.name(class='input', placeholder='Name') }}
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">Password</label>
+                <div class="control">
+                    {{ form.password(class='input', placeholder='Password') }}
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">Role</label>
+                <div class="control">
+                    {{ form.roles }}
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="control">
+                    <button class="button is-primary">Create User</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
