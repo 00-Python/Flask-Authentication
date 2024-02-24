@@ -24,8 +24,11 @@ def login_post():
 
         user = User.query.filter_by(email=email).first()
 
-        # Check if user exists and compare hashed password
-        if not user or not bcrypt.checkpw(password.encode('utf-8'), user.password):
+        # Assuming user.password is a string, you need to decode it into bytes
+        hashed_password_bytes = user.password.encode('utf-8')
+
+        # Then you can use bcrypt.checkpw
+        if not user or not bcrypt.checkpw(password.encode('utf-8'), hashed_password_bytes):
             flash('Please check login details and try again!')
             return redirect(url_for('auth.login'))
 
@@ -88,7 +91,7 @@ def create_user():
             return redirect(url_for('auth.create_user'))
 
         # hash the password
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
         # create a new user
         new_user = User(email=email, name=name, password=hashed_password, roles=roles)
