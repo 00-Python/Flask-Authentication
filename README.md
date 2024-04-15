@@ -16,12 +16,12 @@ The Flask Authentication System provides a solid foundation for implementing use
         ├── forms.py          # the WebForms
         ├── models.py         # the database models
         └── templates
-            ├── base.html     # contains common layout and links
-            ├── base.html     # show the admin create user page with role assignment
-            ├── index.html    # show the home page
-            ├── login.html    # show the login form
-            ├── profile.html  # show the profile page
-            └── signup.html   # show the user signup form (user role only)
+            ├── base.html     
+            ├── base.html     
+            ├── index.html    
+            ├── login.html    
+            ├── profile.html  
+            └── signup.html   
 
 ## Installation
 
